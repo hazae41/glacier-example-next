@@ -10,7 +10,7 @@ function getAllVideosSchema() {
 
   return getSingleSchema<(VideoData | VideoRef)[]>(
     `/api/theytube`,
-    fetchAsJson,
+    fetchAsJson<VideoData[]>,
     { normalizer })
 }
 

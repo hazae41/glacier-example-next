@@ -31,7 +31,7 @@ export function getVideoSchema(id: string) {
 
   return getSingleSchema<VideoData | NormalizedVideoData>(
     `/api/theytube/video?id=${id}`,
-    fetchAsJson,
+    fetchAsJson<VideoData>,
     { normalizer })
 }
 

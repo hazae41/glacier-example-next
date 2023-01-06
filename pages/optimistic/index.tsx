@@ -7,7 +7,7 @@ interface HelloData {
 }
 
 function getHelloSchema() {
-  return getSingleSchema<HelloData>("/api/hello", fetchAsJson)
+  return getSingleSchema("/api/hello", fetchAsJson<HelloData>)
 }
 
 function useHelloData() {

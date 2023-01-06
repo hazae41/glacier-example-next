@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from "react"
 import { fetchAsJson } from "../../src/fetcher"
 
 function getHelloSchema() {
-  return getSingleSchema("/api/hello", fetchAsJson)
+  return getSingleSchema("/api/hello", fetchAsJson<unknown>)
 }
 
 function useHello() {

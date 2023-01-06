@@ -12,8 +12,14 @@ interface Data {
   name: string
 }
 
+type F<D, K> = (k: K) => void
+
+interface P<K> {
+  lol?: K
+}
+
 function getDataSchema(id: string) {
-  return getSingleSchema<Data>(`/api/array?id=${id}`, fetchAsJson)
+  return getSingleSchema(`/api/array?id=${id}`, fetchAsJson<Data>)
 }
 
 async function getDataRef(data: Data | Ref, more: NormalizerMore) {
@@ -30,7 +36,7 @@ function getAllDataSchema() {
 
   return getSingleSchema<(Data | Ref)[]>(
     `/api/array/all`,
-    fetchAsJson,
+    fetchAsJson<Data[]>,
     { normalizer })
 }
 

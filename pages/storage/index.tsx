@@ -27,7 +27,7 @@ const serializer = GZIP
 function getHelloSchema(storage?: Storage) {
   return getSingleSchema(
     "/api/hello?stored",
-    fetchAsJson,
+    fetchAsJson<unknown>,
     { storage, serializer })
 }
 

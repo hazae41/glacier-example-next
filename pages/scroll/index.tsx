@@ -36,13 +36,13 @@ function getElementsSchema() {
     }))
   }
 
-  return getScrollSchema<ElementPage>((previous) => {
+  return getScrollSchema((previous) => {
     if (!previous)
       return `/api/scroll`
     if (!previous.after)
       return undefined
     return `/api/scroll?after=${previous.after}`
-  }, fetchAsJson, { normalizer })
+  }, fetchAsJson<ElementPage>, { normalizer })
 }
 
 function useElement(id: string) {

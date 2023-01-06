@@ -28,7 +28,7 @@ export function getCommentSchema(id: string) {
 
   return getSingleSchema<CommentData | NormalizedCommentData>(
     `/api/theytube/comment?id=${id}`,
-    fetchAsJson,
+    fetchAsJson<CommentData>,
     { normalizer })
 }
 

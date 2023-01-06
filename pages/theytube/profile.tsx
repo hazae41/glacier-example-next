@@ -13,9 +13,9 @@ export interface ProfileData {
 }
 
 export function getProfileSchema(id: string) {
-  return getSingleSchema<ProfileData>(
+  return getSingleSchema(
     `/api/theytube/profile?id=${id}`,
-    fetchAsJson)
+    fetchAsJson<ProfileData>)
 }
 
 export async function getProfileRef(profile: ProfileData | ProfileRef, more: NormalizerMore) {
