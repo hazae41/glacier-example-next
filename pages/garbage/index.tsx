@@ -1,5 +1,5 @@
-import { getSingleSchema, useFetch, useQuery, useXSWR } from "@hazae41/xswr"
-import { useCallback, useEffect, useState } from "react"
+import { getSingleSchema, useFetch, useQuery } from "@hazae41/xswr"
+import { useCallback, useState } from "react"
 import { fetchAsJson } from "../../src/fetcher"
 
 function getHelloSchema() {
@@ -22,8 +22,6 @@ function Consumer() {
 }
 
 export default function Page() {
-  const { core } = useXSWR()
-
   const [count, setCount] = useState(0)
 
   const increase = useCallback(() => {
@@ -33,10 +31,6 @@ export default function Page() {
   const decrease = useCallback(() => {
     setCount(Math.max(count - 1, 0))
   }, [count])
-
-  useEffect(() => {
-    console.log("cache", core.cache)
-  }, [core])
 
   return <>
     {[...Array(count)].map((_, i) =>
