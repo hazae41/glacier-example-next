@@ -1,13 +1,13 @@
-import { getSingleSchema, useFetch, useQuery } from "@hazae41/xswr"
+import { getSchema, useFetch, useSchema } from "@hazae41/xswr"
 import { useCallback, useState } from "react"
 import { fetchAsJson } from "../../src/fetcher"
 
 function getHelloSchema() {
-  return getSingleSchema("/api/hello", fetchAsJson<unknown>)
+  return getSchema("/api/hello", fetchAsJson<unknown>)
 }
 
 function useHello() {
-  const handle = useQuery(getHelloSchema, [])
+  const handle = useSchema(getHelloSchema, [])
 
   useFetch(handle)
   return handle

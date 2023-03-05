@@ -1,4 +1,4 @@
-import { getScrollSchema, getSingleSchema, NormalizerMore, useFetch, useQuery } from "@hazae41/xswr"
+import { getSchema, getScrollSchema, NormalizerMore, useFetch, useSchema, useScrollSchema } from "@hazae41/xswr"
 import { useCallback } from "react"
 import { fetchAsJson } from "../../src/fetcher"
 
@@ -18,7 +18,7 @@ interface ElementData {
 }
 
 function getElementSchema(id: string) {
-  return getSingleSchema(`data:${id}`, undefined)
+  return getSchema(`data:${id}`, undefined)
 }
 
 async function getElementRef(data: ElementData | ElementRef, more: NormalizerMore) {
@@ -46,11 +46,11 @@ function getElementsSchema() {
 }
 
 function useElement(id: string) {
-  return useQuery(getElementSchema, [id])
+  return useSchema(getElementSchema, [id])
 }
 
 function useElements() {
-  const handle = useQuery(getElementsSchema, [])
+  const handle = useScrollSchema(getElementsSchema, [])
   useFetch(handle)
   return handle
 }

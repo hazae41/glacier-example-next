@@ -1,4 +1,4 @@
-import { getSingleSchema, NormalizerMore, useFetch, useQuery } from "@hazae41/xswr";
+import { getSchema, NormalizerMore, useFetch, useSchema } from "@hazae41/xswr";
 import { fetchAsJson } from "../../src/fetcher";
 import { Comment, CommentData, CommentRef, getCommentRef } from "./comment";
 import { getProfileRef, Profile, ProfileData, ProfileRef } from "./profile";
@@ -29,7 +29,7 @@ export function getVideoSchema(id: string) {
     return { ...video, author, comments }
   }
 
-  return getSingleSchema<VideoData | NormalizedVideoData>(
+  return getSchema<VideoData | NormalizedVideoData>(
     `/api/theytube/video?id=${id}`,
     fetchAsJson<VideoData>,
     { normalizer })
@@ -43,7 +43,7 @@ export async function getVideoRef(video: VideoData | VideoRef, more: NormalizerM
 }
 
 export function useVideo(id: string) {
-  const handle = useQuery(getVideoSchema, [id])
+  const handle = useSchema(getVideoSchema, [id])
   useFetch(handle)
   return handle
 }

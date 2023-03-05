@@ -1,4 +1,4 @@
-import { getSingleSchema, NormalizerMore, useFetch, useQuery, useXSWR } from "@hazae41/xswr";
+import { getSchema, NormalizerMore, useFetch, useSchema, useXSWR } from "@hazae41/xswr";
 import { useCallback } from "react";
 import { fetchAsJson } from "../../src/fetcher";
 import { getProfileRef, getProfileSchema, Profile, ProfileData, ProfileRef } from "./profile";
@@ -26,7 +26,7 @@ export function getCommentSchema(id: string) {
     return { ...comment, author }
   }
 
-  return getSingleSchema<CommentData | NormalizedCommentData>(
+  return getSchema<CommentData | NormalizedCommentData>(
     `/api/theytube/comment?id=${id}`,
     fetchAsJson<CommentData>,
     { normalizer })
@@ -40,7 +40,7 @@ export async function getCommentRef(comment: CommentData | CommentRef, more: Nor
 }
 
 export function useComment(id: string) {
-  const handle = useQuery(getCommentSchema, [id])
+  const handle = useSchema(getCommentSchema, [id])
   useFetch(handle)
   return handle
 }

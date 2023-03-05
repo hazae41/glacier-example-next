@@ -1,4 +1,4 @@
-import { getSingleSchema, Storage, useAsyncLocalStorage, useDebug, useQuery } from "@hazae41/xswr";
+import { getSchema, Storage, useAsyncLocalStorage, useDebug, useSchema } from "@hazae41/xswr";
 import { gunzipSync, gzipSync } from "zlib";
 import { fetchAsJson } from "../../src/fetcher";
 
@@ -25,7 +25,7 @@ class GZIP {
 const serializer = GZIP
 
 function getHelloSchema(storage?: Storage) {
-  return getSingleSchema(
+  return getSchema(
     "/api/hello?stored",
     fetchAsJson<unknown>,
     { storage, serializer })
@@ -33,7 +33,7 @@ function getHelloSchema(storage?: Storage) {
 
 function useStoredHello() {
   const storage = useAsyncLocalStorage("cache")
-  const handle = useQuery(getHelloSchema, [storage])
+  const handle = useSchema(getHelloSchema, [storage])
 
   useDebug(handle, "hello")
   return handle

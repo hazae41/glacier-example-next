@@ -1,4 +1,4 @@
-import { getSingleSchema, NormalizerMore, useFetch, useQuery } from "@hazae41/xswr";
+import { getSchema, NormalizerMore, useFetch, useSchema } from "@hazae41/xswr";
 import { useCallback } from "react";
 import { fetchAsJson } from "../../src/fetcher";
 import { getVideoRef, Video, VideoData, VideoRef } from "./video";
@@ -8,14 +8,14 @@ function getAllVideosSchema() {
     return await Promise.all(videos.map(data => getVideoRef(data, more)))
   }
 
-  return getSingleSchema<(VideoData | VideoRef)[]>(
+  return getSchema<(VideoData | VideoRef)[]>(
     `/api/theytube`,
     fetchAsJson<VideoData[]>,
     { normalizer })
 }
 
 function useAllVideos() {
-  const handle = useQuery(getAllVideosSchema, [])
+  const handle = useSchema(getAllVideosSchema, [])
   useFetch(handle)
   return handle
 }

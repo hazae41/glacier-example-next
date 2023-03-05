@@ -1,4 +1,4 @@
-import { getSingleSchema, NormalizerMore, useFetch, useQuery } from "@hazae41/xswr";
+import { getSchema, NormalizerMore, useFetch, useSchema } from "@hazae41/xswr";
 import { useCallback } from "react";
 import { fetchAsJson } from "../../src/fetcher";
 
@@ -13,7 +13,7 @@ export interface ProfileData {
 }
 
 export function getProfileSchema(id: string) {
-  return getSingleSchema(
+  return getSchema(
     `/api/theytube/profile?id=${id}`,
     fetchAsJson<ProfileData>)
 }
@@ -26,7 +26,7 @@ export async function getProfileRef(profile: ProfileData | ProfileRef, more: Nor
 }
 
 export function useProfile(id: string) {
-  const handle = useQuery(getProfileSchema, [id])
+  const handle = useSchema(getProfileSchema, [id])
   useFetch(handle)
   return handle
 }

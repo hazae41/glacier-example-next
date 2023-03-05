@@ -1,4 +1,4 @@
-import { getSingleSchema, NormalizerMore, useFetch, useQuery } from "@hazae41/xswr";
+import { getSchema, NormalizerMore, useFetch, useSchema } from "@hazae41/xswr";
 import { useCallback } from "react";
 import { fetchAsJson } from "../../src/fetcher";
 
@@ -19,7 +19,7 @@ interface P<K> {
 }
 
 function getDataSchema(id: string) {
-  return getSingleSchema(`/api/array?id=${id}`, fetchAsJson<Data>)
+  return getSchema(`/api/array?id=${id}`, fetchAsJson<Data>)
 }
 
 async function getDataRef(data: Data | Ref, more: NormalizerMore) {
@@ -34,20 +34,20 @@ function getAllDataSchema() {
     return await Promise.all(data.map(data => getDataRef(data, more)))
   }
 
-  return getSingleSchema<(Data | Ref)[]>(
+  return getSchema<(Data | Ref)[]>(
     `/api/array/all`,
     fetchAsJson<Data[]>,
     { normalizer })
 }
 
 function useAllData() {
-  const handle = useQuery(getAllDataSchema, [])
+  const handle = useSchema(getAllDataSchema, [])
   useFetch(handle)
   return handle
 }
 
 function useData(id: string) {
-  const handle = useQuery(getDataSchema, [id])
+  const handle = useSchema(getDataSchema, [id])
   useFetch(handle)
   return handle
 }

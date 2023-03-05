@@ -1,13 +1,13 @@
-import { getSingleSchema, useFetch, useQuery } from "@hazae41/xswr"
+import { getSchema, useFetch, useSchema } from "@hazae41/xswr"
 import { useState } from "react"
 import { fetchAsJson } from "../../src/fetcher"
 
 function getKeySchema(id: number) {
-  return getSingleSchema(`/api/query?id=${id}`, fetchAsJson<unknown>)
+  return getSchema(`/api/query?id=${id}`, fetchAsJson<unknown>)
 }
 
 function useKey(id: number) {
-  const handle = useQuery(getKeySchema, [id])
+  const handle = useSchema(getKeySchema, [id])
 
   useFetch(handle)
   return handle
