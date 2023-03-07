@@ -12,7 +12,6 @@ function getHelloSchema() {
 
 function useHelloData() {
   const handle = useSchema(getHelloSchema, [])
-
   useFetch(handle)
   return handle
 }
@@ -20,7 +19,6 @@ function useHelloData() {
 export default function Page() {
   const hello = useHelloData()
 
-  // this is for you, gaearon
   const { data, realData, error, time, loading, update, refetch, mutate, aborter, optimistic } = hello
 
   const onRefreshClick = useCallback(() => {
@@ -34,8 +32,11 @@ export default function Page() {
   const onUpdateClick = useCallback(async () => {
     await update(async function* (previous, { signal }) {
       yield { data: { name: "John Smith" } }
+
       await new Promise(ok => setTimeout(ok, 1000))
+
       yield { data: { name: "John Smith 2" } }
+
       return await fetchAsJson<HelloData>("/api/hello", {
         signal,
         method: "POST",
