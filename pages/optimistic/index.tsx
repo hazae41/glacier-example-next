@@ -30,18 +30,14 @@ export default function Page() {
   }, [mutate])
 
   const onUpdateClick = useCallback(async () => {
-    await update(async function* (previous, { signal }) {
-      yield { data: { name: "John Smith" } }
+    await update(async function* ({ signal }) {
+      yield (previous) => ({ data: { name: `${previous?.realData?.name} 1` } })
 
-      await new Promise(ok => setTimeout(ok, 1000))
+      await new Promise(ok => setTimeout(ok, 2000))
 
-      yield { data: { name: "John Smith 2" } }
+      yield (previous) => ({ data: { name: `${previous?.realData?.name} 2` } })
 
-      return await fetchAsJson<HelloData>("/api/hello", {
-        signal,
-        method: "POST",
-        body: JSON.stringify({ name: "John Smith" })
-      })
+      return await fetchAsJson<HelloData>("/api/hello", { signal })
     })
   }, [update])
 
