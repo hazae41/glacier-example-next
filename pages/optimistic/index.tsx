@@ -31,11 +31,13 @@ export default function Page() {
 
   const onUpdateClick = useCallback(async () => {
     await update(async function* ({ signal }) {
-      yield (previous) => ({ data: { name: `${previous?.realData?.name} 1` } })
+      yield (previous) => ({ data: { name: previous!.data!.name.replace("Doe", "Smith") } })
 
-      await new Promise(ok => setTimeout(ok, 2000))
+      await new Promise(ok => setTimeout(ok, 1000))
 
-      yield (previous) => ({ data: { name: `${previous?.realData?.name} 2` } })
+      yield (previous) => ({ data: { name: previous!.data!.name.replace("Smith", "Johnson") } })
+
+      await new Promise(ok => setTimeout(ok, 1000))
 
       return await fetchAsJson<HelloData>("/api/hello", { signal })
     })
