@@ -5,10 +5,6 @@ import { fetchAsJson } from "../../src/fetcher";
 export namespace GZIP {
 
   export function stringify(value?: any) {
-    return serialize(value)
-  }
-
-  export function serialize(value?: any) {
     const text = JSON.stringify(value)
     const buffer = Buffer.from(text)
     const zbuffer = gzipSync(buffer)
@@ -28,17 +24,27 @@ export namespace GZIP {
 
 }
 
+/**
+ * Fetcher that accepts an object key
+ * @param key 
+ * @param init 
+ * @returns 
+ */
+async function fetchAsJsonWithObjectKey<T>(key: { url: string }, init?: RequestInit) {
+  return await fetchAsJson<T>(key.url, init)
+}
+
 function getHelloSchema(storage?: AsyncLocalStorage) {
   if (!storage) return
 
-  return getSchema("/api/hello?stored", fetchAsJson<unknown>, {
-    keySerializer: GZIP,
+  return getSchema({ url: "/api/hello?stored" }, fetchAsJsonWithObjectKey<unknown>, {
+    keySerializer: GZIP, // Will transform { url: string } into string (default is JSON)
     storage: { storage, serializer: GZIP }
   })
 }
 
 function useStoredHello() {
-  const storage = useAsyncLocalStorage("cache")
+  const storage = useAsyncLocalStorage("cache:")
   const handle = useSchema(getHelloSchema, [storage])
   useDebug(handle, "hello")
   return handle
