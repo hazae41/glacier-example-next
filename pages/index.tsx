@@ -21,7 +21,7 @@ export default function Page() {
       Optimistic updates
     </Link>
     <Link href="/storage" shallow>
-      Persistent storage
+      Encrypted persistent storage
     </Link>
     <Link href="/suspense" shallow>
       React Suspense
