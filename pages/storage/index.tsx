@@ -3,9 +3,6 @@ import { DependencyList, useEffect, useState } from "react";
 import { gunzipSync, gzipSync } from "zlib";
 import { fetchAsJson } from "../../src/fetcher";
 
-const hasherSalt = Buffer.from("zCjjKo0sd0EF6w9C40ud7Q==", "base64")
-const encrypterSalt = Buffer.from("U2U1UqcNZhQdMptZQrD92w==", "base64")
-
 export namespace GZIP {
 
   export function stringify(value?: any) {
@@ -71,8 +68,10 @@ export default function Page() {
     const storage = IDBStorage.create("cache")
     const pbkdf2 = await PBKDF2.from("password")
 
-    const keySerializer = await HmacEncoder.fromPBKDF2(pbkdf2, hasherSalt)
-    const valueSerializer = await AesGcmCoder.fromPBKDF2(pbkdf2, encrypterSalt)
+    const salt = Buffer.from("zCjjKo0sd0EF6w9C40ud7Q==", "base64")
+
+    const keySerializer = await HmacEncoder.fromPBKDF2(pbkdf2, salt)
+    const valueSerializer = await AesGcmCoder.fromPBKDF2(pbkdf2, salt)
 
     return { storage, keySerializer, valueSerializer } as AsyncStorageQueryParams<any>
   }, [])
