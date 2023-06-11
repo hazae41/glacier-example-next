@@ -1,7 +1,6 @@
-import { getSchema, NormalizerMore, useFetch, useSchema } from "@hazae41/xswr";
-import { fetchAsJson } from "../../src/fetcher";
+import { NormalizerMore, createQuerySchema, useFetch, useQuery } from "@hazae41/xswr";
 import { Comment, CommentData, CommentRef, getCommentRef } from "./comment";
-import { getProfileRef, Profile, ProfileData, ProfileRef } from "./profile";
+import { Profile, ProfileData, ProfileRef, getProfileRef } from "./profile";
 
 export interface VideoRef {
   ref: true
@@ -29,21 +28,18 @@ export function getVideoSchema(id: string) {
     return { ...video, author, comments }
   }
 
-  return getSchema<VideoData | NormalizedVideoData>(
-    `/api/theytube/video?id=${id}`,
-    fetchAsJson<VideoData>,
-    { normalizer })
+  return createQuerySchema<VideoData | NormalizedVideoData>(`/api/theytube/video?id=${id}`, undefined, { normalizer })
 }
 
 export async function getVideoRef(video: VideoData | VideoRef, more: NormalizerMore) {
   if ("ref" in video) return video
   const schema = getVideoSchema(video.id)
-  await schema.normalize(video, more)
+  await schema?.normalize(video, more)
   return { ref: true, id: video.id } as VideoRef
 }
 
 export function useVideo(id: string) {
-  const handle = useSchema(getVideoSchema, [id])
+  const handle = useQuery(getVideoSchema, [id])
   useFetch(handle)
   return handle
 }
@@ -51,7 +47,8 @@ export function useVideo(id: string) {
 export function Video(props: { id: string }) {
   const video = useVideo(props.id)
 
-  if (!video.data) return null
+  if (video.data.isNone())
+    return null
 
   return <div className="p-4 border border-solid border-gray-500">
     <div className="flex justify-center items-center w-full aspect-video border border-solid border-gray-500">
@@ -59,11 +56,11 @@ export function Video(props: { id: string }) {
     </div>
     <div className="py-4">
       <h1 className="text-xl">
-        {video.data.title}
+        {video.data.inner.title}
       </h1>
-      <Profile id={video.data.author.id} />
+      <Profile id={video.data.inner.author.id} />
     </div>
-    {video.data.comments.map(ref =>
+    {video.data.inner.comments.map(ref =>
       <Comment
         key={ref.id}
         id={ref.id} />)}

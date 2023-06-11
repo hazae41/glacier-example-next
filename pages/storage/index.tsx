@@ -1,4 +1,4 @@
-import { AesGcmCoder, AsyncStorageQueryParams, getSchema, HmacEncoder, IDBStorage, PBKDF2, useDebug, useSchema } from "@hazae41/xswr";
+import { AesGcmCoder, AsyncStorageQueryParams, HmacEncoder, IDBStorage, PBKDF2, createQuerySchema, useDebug, useQuery } from "@hazae41/xswr";
 import { DependencyList, useEffect, useState } from "react";
 import { gunzipSync, gzipSync } from "zlib";
 import { fetchAsJson } from "../../src/fetcher";
@@ -38,16 +38,16 @@ async function fetchAsJsonWithObjectKey<T>(key: { url: string }, init?: RequestI
 function getHelloSchema(storage?: AsyncStorageQueryParams<any>) {
   if (!storage) return
 
-  return getSchema({ url: "/api/hello?stored" }, fetchAsJsonWithObjectKey<unknown>, {
+  return createQuerySchema({ url: "/api/hello?stored" }, fetchAsJsonWithObjectKey<unknown>, {
     keySerializer: GZIP, // Will transform { url: string } into string (default is JSON)
     storage
   })
 }
 
 function useStoredHello(storage?: AsyncStorageQueryParams<any>) {
-  const handle = useSchema(getHelloSchema, [storage])
-  useDebug(handle, "hello")
-  return handle
+  const query = useQuery(getHelloSchema, [storage])
+  useDebug(query, "hello")
+  return query
 }
 
 function useAsyncMemo<T>(factory: () => Promise<T>, deps: DependencyList) {
@@ -70,8 +70,8 @@ export default function Page() {
 
     const salt = Buffer.from("zCjjKo0sd0EF6w9C40ud7Q==", "base64")
 
-    const keySerializer = await HmacEncoder.fromPBKDF2(pbkdf2, salt)
-    const valueSerializer = await AesGcmCoder.fromPBKDF2(pbkdf2, salt)
+    const keySerializer = await HmacEncoder.fromPBKDF2(pbkdf2, salt, 1_000_000)
+    const valueSerializer = await AesGcmCoder.fromPBKDF2(pbkdf2, salt, 1_000_000)
 
     return { storage, keySerializer, valueSerializer } as AsyncStorageQueryParams<any>
   }, [])

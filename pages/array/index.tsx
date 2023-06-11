@@ -1,59 +1,51 @@
-import { getSchema, NormalizerMore, useFetch, useSchema } from "@hazae41/xswr";
+import { Option } from "@hazae41/option";
+import { NormalizerMore, createQuerySchema, useFetch, useQuery } from "@hazae41/xswr";
 import { useCallback } from "react";
 import { fetchAsJson } from "../../src/fetcher";
 
-interface Ref {
+interface HelloRef {
   ref: true
   id: string
 }
 
-interface Data {
+interface HelloData {
   id: string
   name: string
 }
 
-type F<D, K> = (k: K) => void
-
-interface P<K> {
-  lol?: K
-}
-
 function getDataSchema(id: string) {
-  return getSchema(`/api/array?id=${id}`, fetchAsJson<Data>)
+  return createQuerySchema(`/api/array?id=${id}`, fetchAsJson<HelloData>)
 }
 
-async function getDataRef(data: Data | Ref, more: NormalizerMore) {
+async function getDataRef(data: HelloData | HelloRef, more: NormalizerMore): Promise<HelloRef> {
   if ("ref" in data) return data
   const schema = getDataSchema(data.id)
-  await schema.normalize(data, more)
-  return { ref: true, id: data.id } as Ref
+  await schema?.normalize(data, more)
+  return { ref: true, id: data.id }
 }
 
-function getAllDataSchema() {
-  async function normalizer(data: (Data | Ref)[], more: NormalizerMore) {
+function getAllHelloSchema() {
+  async function normalizer(data: (HelloData | HelloRef)[], more: NormalizerMore) {
     return await Promise.all(data.map(data => getDataRef(data, more)))
   }
 
-  return getSchema<(Data | Ref)[]>(
-    `/api/array/all`,
-    fetchAsJson<Data[]>,
-    { normalizer })
+  return createQuerySchema<(HelloData | HelloRef)[]>(`/api/array/all`, fetchAsJson<HelloData[]>, { normalizer })
 }
 
-function useAllData() {
-  const handle = useSchema(getAllDataSchema, [])
-  useFetch(handle)
-  return handle
+function useAllHello() {
+  const query = useQuery(getAllHelloSchema, [])
+  useFetch(query)
+  return query
 }
 
-function useData(id: string) {
-  const handle = useSchema(getDataSchema, [id])
-  useFetch(handle)
-  return handle
+function useHello(id: string) {
+  const query = useQuery(getDataSchema, [id])
+  useFetch(query)
+  return query
 }
 
 export default function Page() {
-  const { data, refetch } = useAllData()
+  const { data, refetch } = useAllHello()
 
   const onRefetchClick = useCallback(() => {
     refetch()
@@ -64,7 +56,7 @@ export default function Page() {
   if (!data) return <>Loading...</>
 
   return <>
-    {data?.map(ref =>
+    {data.inner?.map(ref =>
       <Element
         key={ref.id}
         id={ref.id} />)}
@@ -75,10 +67,10 @@ export default function Page() {
 }
 
 function Element(props: { id: string }) {
-  const { data, mutate } = useData(props.id)
+  const { data, mutate } = useHello(props.id)
 
   const onMutateClick = useCallback(() => {
-    mutate(c => c && ({ data: c.data && { ...c.data, name: "Unde Fined" } }))
+    mutate(state => Option.from(state.current?.data).mapSync(data => data.mapSync(hello => ({ ...hello, name: "Hello World" }))))
   }, [mutate])
 
   console.log(props.id, data)

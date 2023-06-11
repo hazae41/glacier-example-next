@@ -1,4 +1,5 @@
-import { getSchema, useFetch, useSchema } from "@hazae41/xswr"
+import { Option, Some } from "@hazae41/option"
+import { Data, createQuerySchema, useFetch, useQuery } from "@hazae41/xswr"
 import { useCallback } from "react"
 import { fetchAsJson } from "../../src/fetcher"
 
@@ -6,67 +7,71 @@ interface HelloData {
   name: string
 }
 
-function getHelloSchema() {
-  return getSchema("/api/hello", fetchAsJson<HelloData>)
+function createHelloSchema() {
+  return createQuerySchema("/api/hello", fetchAsJson<HelloData>)
 }
 
-function useHelloData() {
-  const handle = useSchema(getHelloSchema, [])
-  useFetch(handle)
-  return handle
+function useHelloQuery() {
+  const query = useQuery(createHelloSchema, [])
+  useFetch(query)
+  return query
 }
 
 export default function Page() {
-  const hello = useHelloData()
+  const hello = useHelloQuery()
 
-  const { data, realData, error, time, loading, update, refetch, mutate, aborter, optimistic } = hello
+  const { data, error, time, real, fetching, update, refetch, mutate, aborter, optimistic } = hello
 
   const onRefreshClick = useCallback(() => {
-    refetch()
+    refetch().then(r => r.ignore())
   }, [refetch])
 
   const onMutateClick = useCallback(() => {
-    mutate(() => ({ data: { name: "Hello World" } }))
+    mutate(state => new Some(new Data({ name: "Hello World" })))
   }, [mutate])
 
   const onUpdateClick = useCallback(async () => {
-    await update(async function* ({ signal }) {
-      yield (previous) => ({ data: { name: previous!.data!.name.replace("Doe", "Smith") } })
+    await update(async function* () {
+      yield (previous) =>
+        Option.from(previous.current?.data).mapSync(data =>
+          new Data({ name: data.inner.name.replace("Doe", "Smith") }))
 
       await new Promise(ok => setTimeout(ok, 1000))
 
-      yield (previous) => ({ data: { name: previous!.data!.name.replace("Smith", "Johnson") } })
+      yield (previous) =>
+        Option.from(previous.current?.data).mapSync(data =>
+          new Data({ name: data.inner.name.replace("Doe", "Johnson") }))
 
       await new Promise(ok => setTimeout(ok, 1000))
 
-      return await fetchAsJson<HelloData>("/api/hello", { signal })
+      return async (url, { signal }) => await fetchAsJson<HelloData>(url, { signal })
     })
   }, [update])
 
   const onAbortClick = useCallback(() => {
-    aborter!.abort("aborted lol")
+    aborter?.abort("aborted lol")
   }, [aborter])
 
   return <>
     <div>
-      Data: {JSON.stringify(data) ?? "undefined"}
+      Data: {JSON.stringify(data.inner) ?? "undefined"}
     </div>
     <div>
-      Real data: {JSON.stringify(realData) ?? "undefined"}
+      Real data: {JSON.stringify(real.data.inner) ?? "undefined"}
     </div>
     <div>
-      time: {time && ~~(time / 1000)}
+      time: {time}
     </div>
     <div style={{ color: "red" }}>
-      {error instanceof Error
-        ? error.message
-        : JSON.stringify(error)}
+      {error.inner instanceof Error
+        ? error.inner.message
+        : JSON.stringify(error.inner)}
     </div>
     <div>
       {optimistic && "Optimistic"}
     </div>
     <div>
-      {loading && "Loading..."}
+      {fetching && "Loading..."}
     </div>
     <button onClick={onRefreshClick}>
       Refresh

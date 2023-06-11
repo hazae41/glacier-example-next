@@ -1,16 +1,15 @@
-import { getSchema, useFetch, useSchema } from "@hazae41/xswr"
+import { createQuerySchema, useFetch, useQuery, } from "@hazae41/xswr"
 import { useCallback, useState } from "react"
 import { fetchAsJson } from "../../src/fetcher"
 
 function getHelloSchema() {
-  return getSchema("/api/hello", fetchAsJson<unknown>)
+  return createQuerySchema("/api/hello", fetchAsJson<unknown>)
 }
 
 function useHello() {
-  const handle = useSchema(getHelloSchema, [])
-
-  useFetch(handle)
-  return handle
+  const query = useQuery(getHelloSchema, [])
+  useFetch(query)
+  return query
 }
 
 function Consumer() {

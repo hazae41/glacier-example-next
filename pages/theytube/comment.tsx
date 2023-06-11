@@ -1,7 +1,7 @@
-import { getSchema, NormalizerMore, useFetch, useSchema, useXSWR } from "@hazae41/xswr";
+import { Option } from "@hazae41/option";
+import { Data, NormalizerMore, createQuerySchema, useFetch, useQuery, useXSWR } from "@hazae41/xswr";
 import { useCallback } from "react";
-import { fetchAsJson } from "../../src/fetcher";
-import { getProfileRef, getProfileSchema, Profile, ProfileData, ProfileRef } from "./profile";
+import { Profile, ProfileData, ProfileRef, getProfileRef, getProfileSchema } from "./profile";
 
 export interface CommentRef {
   ref: true
@@ -26,21 +26,18 @@ export function getCommentSchema(id: string) {
     return { ...comment, author }
   }
 
-  return getSchema<CommentData | NormalizedCommentData>(
-    `/api/theytube/comment?id=${id}`,
-    fetchAsJson<CommentData>,
-    { normalizer })
+  return createQuerySchema<CommentData | NormalizedCommentData>(`/api/theytube/comment?id=${id}`, undefined, { normalizer })
 }
 
 export async function getCommentRef(comment: CommentData | CommentRef, more: NormalizerMore) {
   if ("ref" in comment) return comment
   const schema = getCommentSchema(comment.id)
-  await schema.normalize(comment, more)
+  await schema?.normalize(comment, more)
   return { ref: true, id: comment.id } as CommentRef
 }
 
 export function useComment(id: string) {
-  const handle = useSchema(getCommentSchema, [id])
+  const handle = useQuery(getCommentSchema, [id])
   useFetch(handle)
   return handle
 }
@@ -49,24 +46,37 @@ export function Comment(props: { id: string }) {
   const { make } = useXSWR()
   const comment = useComment(props.id)
 
-  const onChangeAuthorClick = useCallback(() => {
-    if (!comment.data) return
+  const onChangeAuthorClick = useCallback(async () => {
+    if (!comment.data)
+      return
 
-    const John69 = make(getProfileSchema("1518516160"))
-    if (!John69.state) return
+    const sJohn69 = getProfileSchema("1518516160")
 
-    const author = John69.state.data!
+    if (!sJohn69)
+      return
 
-    comment.mutate(c => c && ({ data: c.data && ({ ...c.data, author }) }))
+    const John69 = await make(sJohn69)
+
+    const author = John69.state.current?.data?.inner
+
+    if (!author)
+      return
+
+    comment.mutate(s => {
+      const p = Option.from(s.current?.data?.inner)
+      return p.mapSync(d => new Data({ ...d, author }))
+    })
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [comment.data, comment.mutate])
 
-  if (!comment.data) return null
+  if (comment.data.isNone())
+    return null
 
   return <div className="p-4 border border-solid border-gray-500">
-    <Profile id={comment.data.author.id} />
+    <Profile id={comment.data.inner.author.id} />
     <pre className="whitespace-pre-wrap">
-      {comment.data.text}
+      {comment.data.inner.text}
     </pre>
     <button onClick={onChangeAuthorClick}>
       Change author

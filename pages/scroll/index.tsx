@@ -1,4 +1,4 @@
-import { getSchema, getScrollSchema, NormalizerMore, useFetch, useSchema, useScrollSchema } from "@hazae41/xswr"
+import { NormalizerMore, createQuerySchema, createScrollQuerySchema, useFetch, useQuery, useScrollQuery } from "@hazae41/xswr"
 import { useCallback } from "react"
 import { fetchAsJson } from "../../src/fetcher"
 
@@ -18,13 +18,13 @@ interface ElementData {
 }
 
 function getElementSchema(id: string) {
-  return getSchema(`data:${id}`, undefined)
+  return createQuerySchema(`data:${id}`, undefined)
 }
 
 async function getElementRef(data: ElementData | ElementRef, more: NormalizerMore) {
   if ("ref" in data) return data
   const schema = getElementSchema(data.id)
-  await schema.normalize(data, more)
+  await schema?.normalize(data, more)
   return { ref: true, id: data.id } as ElementRef
 }
 
@@ -36,7 +36,7 @@ function getElementsSchema() {
     }))
   }
 
-  return getScrollSchema((previous) => {
+  return createScrollQuerySchema((previous) => {
     if (!previous)
       return `/api/scroll`
     if (!previous.after)
@@ -46,13 +46,13 @@ function getElementsSchema() {
 }
 
 function useElement(id: string) {
-  return useSchema(getElementSchema, [id])
+  return useQuery(getElementSchema, [id])
 }
 
 function useElements() {
-  const handle = useScrollSchema(getElementsSchema, [])
-  useFetch(handle)
-  return handle
+  const query = useScrollQuery(getElementsSchema, [])
+  useFetch(query)
+  return query
 }
 
 function Element(props: { id: string }) {
@@ -64,7 +64,7 @@ function Element(props: { id: string }) {
 export default function Page() {
   const scrolls = useElements()
 
-  const { data, error, loading, refetch, scroll, aborter } = scrolls
+  const { data, error, fetching, refetch, scroll, aborter } = scrolls
 
   const onRefreshClick = useCallback(() => {
     refetch()
@@ -79,7 +79,7 @@ export default function Page() {
   }, [aborter])
 
   return <>
-    {data?.map((page, i) => <div key={i}>
+    {data.inner?.map((page, i) => <div key={i}>
       <div>page {i}</div>
       {page.data.map(ref =>
         <Element
@@ -92,7 +92,7 @@ export default function Page() {
         : JSON.stringify(error)}
     </div>
     <div>
-      {loading && "Loading..."}
+      {fetching && "Loading..."}
     </div>
     <button onClick={onRefreshClick}>
       Refresh
