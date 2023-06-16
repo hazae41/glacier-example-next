@@ -1,11 +1,11 @@
-import { AesGcmCoder, AsyncStorageQueryParams, HmacEncoder, IDBStorage, PBKDF2, createQuerySchema, useDebug, useQuery } from "@hazae41/xswr";
+import { AesGcmCoder, AsyncPipeBicoder, HmacEncoder, IDBStorage, PBKDF2, Storage, createQuerySchema, useDebug, useQuery } from "@hazae41/xswr";
 import { DependencyList, useEffect, useState } from "react";
 import { gunzipSync, gzipSync } from "zlib";
 import { fetchAsJson } from "../../src/fetcher";
 
 export namespace GZIP {
 
-  export function stringify(value?: any) {
+  export async function stringify(value?: any) {
     const text = JSON.stringify(value)
     const buffer = Buffer.from(text)
     const zbuffer = gzipSync(buffer)
@@ -14,7 +14,7 @@ export namespace GZIP {
     return ztext
   }
 
-  export function parse(ztext: string) {
+  export async function parse(ztext: string) {
     const zbuffer = Buffer.from(ztext, "base64")
     const buffer = gunzipSync(zbuffer)
     const text = buffer.toString()
@@ -35,7 +35,7 @@ async function fetchAsJsonWithObjectKey<T>(key: { url: string }, init?: RequestI
   return await fetchAsJson<T>(key.url, init)
 }
 
-function getHelloSchema(storage?: AsyncStorageQueryParams<any>) {
+function getHelloSchema(storage?: Storage) {
   if (!storage) return
 
   return createQuerySchema({ url: "/api/hello?stored" }, fetchAsJsonWithObjectKey<unknown>, {
@@ -44,7 +44,7 @@ function getHelloSchema(storage?: AsyncStorageQueryParams<any>) {
   })
 }
 
-function useStoredHello(storage?: AsyncStorageQueryParams<any>) {
+function useStoredHello(storage?: Storage) {
   const query = useQuery(getHelloSchema, [storage])
   useDebug(query, "hello")
   return query
@@ -65,18 +65,20 @@ function useAsyncMemo<T>(factory: () => Promise<T>, deps: DependencyList) {
 export default function Page() {
 
   const storage = useAsyncMemo(async () => {
-    const storage = IDBStorage.create("cache")
     const pbkdf2 = await PBKDF2.from("password")
 
     const salt = Buffer.from("zCjjKo0sd0EF6w9C40ud7Q==", "base64")
 
     const keySerializer = await HmacEncoder.fromPBKDF2(pbkdf2, salt, 1_000_000)
-    const valueSerializer = await AesGcmCoder.fromPBKDF2(pbkdf2, salt, 1_000_000)
+    const innerSerializer = await AesGcmCoder.fromPBKDF2(pbkdf2, salt, 1_000_000)
+    const valueSerializer = new AsyncPipeBicoder(JSON, innerSerializer)
 
-    return { storage, keySerializer, valueSerializer } as AsyncStorageQueryParams<any>
+    return IDBStorage.tryCreate({ name: "cache", keySerializer, valueSerializer }).unwrap()
   }, [])
 
-  const { data, fetch, clear } = useStoredHello(storage)
+  const { cacheKey, data, fetch, clear } = useStoredHello(storage)
+
+  console.log("gzipped key", cacheKey)
 
   return <>
     <div>

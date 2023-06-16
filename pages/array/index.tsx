@@ -1,14 +1,18 @@
 import { Option } from "@hazae41/option";
-import { NormalizerMore, createQuerySchema, useFetch, useQuery } from "@hazae41/xswr";
+import { NormalizerMore, State, createQuerySchema, useFetch, useQuery } from "@hazae41/xswr";
 import { useCallback } from "react";
 import { fetchAsJson } from "../../src/fetcher";
 
-interface HelloRef {
+export type Hello =
+  | HelloData
+  | HelloRef
+
+export interface HelloRef {
   ref: true
   id: string
 }
 
-interface HelloData {
+export interface HelloData {
   id: string
   name: string
 }
@@ -25,11 +29,10 @@ async function getDataRef(data: HelloData | HelloRef, more: NormalizerMore): Pro
 }
 
 function getAllHelloSchema() {
-  async function normalizer(data: (HelloData | HelloRef)[], more: NormalizerMore) {
-    return await Promise.all(data.map(data => getDataRef(data, more)))
-  }
+  const normalizer = async (data: Hello[], more: NormalizerMore) =>
+    await Promise.all(data.map(data => getDataRef(data, more)))
 
-  return createQuerySchema<(HelloData | HelloRef)[]>(`/api/array/all`, fetchAsJson<HelloData[]>, { normalizer })
+  return createQuerySchema(`/api/array/all`, fetchAsJson<Hello[]>, { normalizer })
 }
 
 function useAllHello() {
@@ -53,7 +56,8 @@ export default function Page() {
 
   console.log("all", data)
 
-  if (!data) return <>Loading...</>
+  if (data === undefined)
+    return <>Loading...</>
 
   return <>
     {data.inner?.map(ref =>
@@ -66,11 +70,15 @@ export default function Page() {
   </>
 }
 
+function pipeData<D, F>(piper: (data: D) => D) {
+  return (state: State<D, F>) => Option.wrap(state.data).mapSync(data => data.mapSync(piper))
+}
+
 function Element(props: { id: string }) {
   const { data, mutate } = useHello(props.id)
 
   const onMutateClick = useCallback(() => {
-    mutate(state => Option.from(state.current?.data).mapSync(data => data.mapSync(hello => ({ ...hello, name: "Hello World" }))))
+    mutate(pipeData(d => ({ ...d, name: "Hello World" })))
   }, [mutate])
 
   console.log(props.id, data)

@@ -1,6 +1,10 @@
 import { Option } from "@hazae41/option";
-import { Data, NormalizerMore, createQuerySchema, useFetch, useQuery } from "@hazae41/xswr";
+import { NormalizerMore, State, createQuerySchema, useFetch, useQuery } from "@hazae41/xswr";
 import { useCallback } from "react";
+
+export type Profile =
+  | ProfileData
+  | ProfileRef
 
 export interface ProfileRef {
   ref: true
@@ -13,10 +17,10 @@ export interface ProfileData {
 }
 
 export function getProfileSchema(id: string) {
-  return createQuerySchema(`/api/theytube/profile?id=${id}`, undefined)
+  return createQuerySchema<string, ProfileData, never>(`/api/theytube/profile?id=${id}`, undefined)
 }
 
-export async function getProfileRef(profile: ProfileData | ProfileRef, more: NormalizerMore) {
+export async function getProfileRef(profile: Profile, more: NormalizerMore) {
   if ("ref" in profile) return profile
   const schema = getProfileSchema(profile.id)
   await schema?.normalize(profile, more)
@@ -29,21 +33,22 @@ export function useProfile(id: string) {
   return handle
 }
 
+function pipeData<D, F>(piper: (data: D) => D) {
+  return (state: State<D, F>) => Option.wrap(state.data).mapSync(data => data.mapSync(piper))
+}
+
 export function Profile(props: { id: string }) {
   const profile = useProfile(props.id)
 
   const onRenameClick = useCallback(() => {
     if (!profile.data) return
 
-    profile.mutate(state => {
-      const p = Option.from(state.current?.data?.inner)
-      return p.mapSync(d => new Data({ ...d, nickname: "John Doe" }))
-    })
+    profile.mutate(pipeData(d => ({ ...d, nickname: "John Doe" })))
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile.data, profile.mutate])
 
-  if (profile.data.isNone())
+  if (profile.data === undefined)
     return null
 
   return <div className="text-gray-500">

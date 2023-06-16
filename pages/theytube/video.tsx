@@ -1,17 +1,25 @@
 import { NormalizerMore, createQuerySchema, useFetch, useQuery } from "@hazae41/xswr";
-import { Comment, CommentData, CommentRef, getCommentRef } from "./comment";
+import { Comment, CommentRef, NonNormalizedCommentData, getCommentRef } from "./comment";
 import { Profile, ProfileData, ProfileRef, getProfileRef } from "./profile";
+
+export type Video =
+  | VideoData
+  | VideoRef
 
 export interface VideoRef {
   ref: true
   id: string
 }
 
-export interface VideoData {
+export type VideoData =
+  | NormalizedVideoData
+  | NonNormalizedVideoData
+
+export interface NonNormalizedVideoData {
   id: string
   title: string
   author: ProfileData
-  comments: CommentData[]
+  comments: NonNormalizedCommentData[]
 }
 
 export interface NormalizedVideoData {
@@ -22,16 +30,16 @@ export interface NormalizedVideoData {
 }
 
 export function getVideoSchema(id: string) {
-  async function normalizer(video: VideoData | NormalizedVideoData, more: NormalizerMore) {
+  async function normalizer(video: VideoData, more: NormalizerMore) {
     const author = await getProfileRef(video.author, more)
     const comments = await Promise.all(video.comments.map(data => getCommentRef(data, more)))
     return { ...video, author, comments }
   }
 
-  return createQuerySchema<VideoData | NormalizedVideoData>(`/api/theytube/video?id=${id}`, undefined, { normalizer })
+  return createQuerySchema<string, VideoData, never>(`/api/theytube/video?id=${id}`, undefined, { normalizer })
 }
 
-export async function getVideoRef(video: VideoData | VideoRef, more: NormalizerMore) {
+export async function getVideoRef(video: Video, more: NormalizerMore) {
   if ("ref" in video) return video
   const schema = getVideoSchema(video.id)
   await schema?.normalize(video, more)
@@ -47,7 +55,7 @@ export function useVideo(id: string) {
 export function Video(props: { id: string }) {
   const video = useVideo(props.id)
 
-  if (video.data.isNone())
+  if (video.data === undefined)
     return null
 
   return <div className="p-4 border border-solid border-gray-500">

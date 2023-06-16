@@ -29,12 +29,10 @@ async function getElementRef(data: ElementData | ElementRef, more: NormalizerMor
 }
 
 function getElementsSchema() {
-  async function normalizer(pages: ElementPage[], more: NormalizerMore) {
-    return await Promise.all(pages.map(async page => {
-      const data = await Promise.all(page.data.map(data => getElementRef(data, more)))
-      return { ...page, data } as ElementPage
-    }))
-  }
+  const normalizer = async (pages: ElementPage[], more: NormalizerMore) =>
+    await Promise.all(pages.map(async page =>
+      ({ ...page, data: await Promise.all(page.data.map(data => getElementRef(data, more))) })))
+
 
   return createScrollQuerySchema((previous) => {
     if (!previous)
@@ -79,7 +77,7 @@ export default function Page() {
   }, [aborter])
 
   return <>
-    {data.inner?.map((page, i) => <div key={i}>
+    {data?.inner.map((page, i) => <div key={i}>
       <div>page {i}</div>
       {page.data.map(ref =>
         <Element

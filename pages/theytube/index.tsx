@@ -1,14 +1,13 @@
 import { NormalizerMore, createQuerySchema, useFetch, useQuery } from "@hazae41/xswr";
 import { useCallback } from "react";
 import { fetchAsJson } from "../../src/fetcher";
-import { Video, VideoData, VideoRef, getVideoRef } from "./video";
+import { Video, VideoData, getVideoRef } from "./video";
 
 function getAllVideosSchema() {
-  async function normalizer(videos: (VideoData | VideoRef)[], more: NormalizerMore) {
-    return await Promise.all(videos.map(data => getVideoRef(data, more)))
-  }
+  const normalizer = async (videos: Video[], more: NormalizerMore) =>
+    await Promise.all(videos.map(data => getVideoRef(data, more)))
 
-  return createQuerySchema<(VideoData | VideoRef)[]>(`/api/theytube`, fetchAsJson<VideoData[]>, { normalizer })
+  return createQuerySchema<string, Video[], Error>(`/api/theytube`, fetchAsJson<VideoData[]>, { normalizer })
 }
 
 function useAllVideos() {
@@ -25,7 +24,7 @@ export default function Page() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [videos.refetch])
 
-  if (videos.data.isNone())
+  if (videos.data === undefined)
     return <>Loading...</>
 
   return <div className="w-full max-w-xl">

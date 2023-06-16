@@ -1,5 +1,5 @@
 import { Option, Some } from "@hazae41/option"
-import { Data, createQuerySchema, useFetch, useQuery } from "@hazae41/xswr"
+import { Data, State, createQuerySchema, useFetch, useQuery } from "@hazae41/xswr"
 import { useCallback } from "react"
 import { fetchAsJson } from "../../src/fetcher"
 
@@ -17,10 +17,14 @@ function useHelloQuery() {
   return query
 }
 
+function pipeData<D, F>(piper: (data: D) => D) {
+  return (state: State<D, F>) => Option.wrap(state.data).mapSync(data => data.mapSync(piper))
+}
+
 export default function Page() {
   const hello = useHelloQuery()
 
-  const { data, error, time, real, fetching, update, refetch, mutate, aborter, optimistic } = hello
+  const { current, real, fetching, update, refetch, mutate, aborter, optimistic } = hello
 
   const onRefreshClick = useCallback(() => {
     refetch().then(r => r.ignore())
@@ -32,19 +36,11 @@ export default function Page() {
 
   const onUpdateClick = useCallback(async () => {
     await update(async function* () {
-      yield (previous) =>
-        Option.from(previous.current?.data).mapSync(data =>
-          new Data({ name: data.inner.name.replace("Doe", "Smith") }))
-
+      yield pipeData(d => ({ ...d, name: d.name.replace("Doe", "Smith") }))
       await new Promise(ok => setTimeout(ok, 1000))
-
-      yield (previous) =>
-        Option.from(previous.current?.data).mapSync(data =>
-          new Data({ name: data.inner.name.replace("Doe", "Johnson") }))
-
+      yield pipeData(d => ({ ...d, name: d.name.replace("Doe", "Johnson") }))
       await new Promise(ok => setTimeout(ok, 1000))
-
-      return async (url, { signal }) => await fetchAsJson<HelloData>(url, { signal })
+      return fetchAsJson<HelloData>
     })
   }, [update])
 
@@ -54,18 +50,10 @@ export default function Page() {
 
   return <>
     <div>
-      Data: {JSON.stringify(data.inner) ?? "undefined"}
+      Current: {JSON.stringify(current) ?? "undefined"}
     </div>
     <div>
-      Real data: {JSON.stringify(real.data.inner) ?? "undefined"}
-    </div>
-    <div>
-      time: {time}
-    </div>
-    <div style={{ color: "red" }}>
-      {error.inner instanceof Error
-        ? error.inner.message
-        : JSON.stringify(error.inner)}
+      Real data: {JSON.stringify(real) ?? "undefined"}
     </div>
     <div>
       {optimistic && "Optimistic"}

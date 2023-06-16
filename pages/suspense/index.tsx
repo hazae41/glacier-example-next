@@ -26,8 +26,14 @@ function Child() {
 function Parent() {
   const hello = useHelloData()
 
+  console.log(hello)
+
+  if (hello.error)
+    throw hello.error.inner
+
   // Suspend until next state change
-  if (!hello.data) throw hello.suspend()
+  if (!hello.data)
+    throw hello.suspend().then(r => r.unwrap())
 
   return <div>
     Parent: {JSON.stringify(hello.data)}

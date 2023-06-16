@@ -1,5 +1,5 @@
 import { Option } from "@hazae41/option";
-import { Data, NormalizerMore, createQuerySchema, useFetch, useQuery, useXSWR } from "@hazae41/xswr";
+import { NormalizerMore, State, createQuerySchema, useFetch, useQuery, useXSWR } from "@hazae41/xswr";
 import { useCallback } from "react";
 import { Profile, ProfileData, ProfileRef, getProfileRef, getProfileSchema } from "./profile";
 
@@ -8,7 +8,11 @@ export interface CommentRef {
   id: string
 }
 
-export interface CommentData {
+export type CommentData =
+  | NormalizedCommentData
+  | NonNormalizedCommentData
+
+export interface NonNormalizedCommentData {
   id: string,
   author: ProfileData,
   text: string
@@ -21,12 +25,12 @@ export interface NormalizedCommentData {
 }
 
 export function getCommentSchema(id: string) {
-  async function normalizer(comment: CommentData | NormalizedCommentData, more: NormalizerMore) {
+  async function normalizer(comment: CommentData, more: NormalizerMore) {
     const author = await getProfileRef(comment.author, more)
     return { ...comment, author }
   }
 
-  return createQuerySchema<CommentData | NormalizedCommentData>(`/api/theytube/comment?id=${id}`, undefined, { normalizer })
+  return createQuerySchema<string, CommentData, never>(`/api/theytube/comment?id=${id}`, undefined, { normalizer })
 }
 
 export async function getCommentRef(comment: CommentData | CommentRef, more: NormalizerMore) {
@@ -40,6 +44,10 @@ export function useComment(id: string) {
   const handle = useQuery(getCommentSchema, [id])
   useFetch(handle)
   return handle
+}
+
+function pipeData<D, F>(piper: (data: D) => D) {
+  return (state: State<D, F>) => Option.wrap(state.data).mapSync(data => data.mapSync(piper))
 }
 
 export function Comment(props: { id: string }) {
@@ -57,20 +65,17 @@ export function Comment(props: { id: string }) {
 
     const John69 = await make(sJohn69)
 
-    const author = John69.state.current?.data?.inner
+    const author = John69.state.data?.inner
 
     if (!author)
       return
 
-    comment.mutate(s => {
-      const p = Option.from(s.current?.data?.inner)
-      return p.mapSync(d => new Data({ ...d, author }))
-    })
+    comment.mutate(pipeData(d => ({ ...d, author })))
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [comment.data, comment.mutate])
 
-  if (comment.data.isNone())
+  if (comment.data === undefined)
     return null
 
   return <div className="p-4 border border-solid border-gray-500">

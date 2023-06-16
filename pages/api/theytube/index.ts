@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { ProfileData } from '../../theytube/profile'
-import { VideoData } from '../../theytube/video'
+import { NonNormalizedVideoData } from '../../theytube/video'
 
 const John69: ProfileData = {
   id: "1518516160",
@@ -22,7 +22,7 @@ const RandomGuy123: ProfileData = {
   nickname: "RandomGuy123"
 }
 
-const MeAtTheZoo: VideoData = {
+const MeAtTheZoo: NonNormalizedVideoData = {
   id: "187616286136",
   title: "Me at the zoo",
   author: John69,
@@ -40,7 +40,7 @@ const MeAtTheZoo: VideoData = {
   ]
 }
 
-const ThanksFor1MSubscribers: VideoData = {
+const ThanksFor1MSubscribers: NonNormalizedVideoData = {
   id: "16861981794163",
   author: RandomGuy123,
   title: "Thanks for 1M subscribers",
