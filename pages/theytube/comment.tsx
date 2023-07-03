@@ -1,7 +1,11 @@
-import { Option } from "@hazae41/option";
-import { NormalizerMore, State, createQuerySchema, useFetch, useQuery, useXSWR } from "@hazae41/xswr";
+import { Option, Optional } from "@hazae41/option";
+import { Data, Fetched, NormalizerMore, State, Times, createQuerySchema, useFetch, useQuery, useXSWR } from "@hazae41/xswr";
 import { useCallback } from "react";
 import { Profile, ProfileData, ProfileRef, getProfileRef, getProfileSchema } from "./profile";
+
+export type Comment =
+  | CommentData
+  | CommentRef
 
 export interface CommentRef {
   ref: true
@@ -25,18 +29,22 @@ export interface NormalizedCommentData {
 }
 
 export function getCommentSchema(id: string) {
-  async function normalizer(comment: CommentData, more: NormalizerMore) {
-    const author = await getProfileRef(comment.author, more)
-    return { ...comment, author }
-  }
+  const normalizer = async (fetched: Optional<Fetched<CommentData, never>>, more: NormalizerMore) =>
+    fetched?.map(async comment => {
+      const author = await getProfileRef(comment.author, fetched, more)
+      return { ...comment, author }
+    })
 
-  return createQuerySchema<string, CommentData, never>(`/api/theytube/comment?id=${id}`, undefined, { normalizer })
+  return createQuerySchema<string, CommentData, never>({
+    key: `/api/theytube/comment?id=${id}`,
+    normalizer
+  })
 }
 
-export async function getCommentRef(comment: CommentData | CommentRef, more: NormalizerMore) {
+export async function getCommentRef(comment: Comment, times: Times, more: NormalizerMore) {
   if ("ref" in comment) return comment
   const schema = getCommentSchema(comment.id)
-  await schema?.normalize(comment, more)
+  await schema?.normalize(new Data(comment, times), more)
   return { ref: true, id: comment.id } as CommentRef
 }
 

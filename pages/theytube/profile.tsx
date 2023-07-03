@@ -1,5 +1,5 @@
 import { Option } from "@hazae41/option";
-import { NormalizerMore, State, createQuerySchema, useFetch, useQuery } from "@hazae41/xswr";
+import { Data, NormalizerMore, State, Times, createQuerySchema, useFetch, useQuery } from "@hazae41/xswr";
 import { useCallback } from "react";
 
 export type Profile =
@@ -17,13 +17,15 @@ export interface ProfileData {
 }
 
 export function getProfileSchema(id: string) {
-  return createQuerySchema<string, ProfileData, never>(`/api/theytube/profile?id=${id}`, undefined)
+  return createQuerySchema<string, ProfileData, never>({
+    key: `/api/theytube/profile?id=${id}`
+  })
 }
 
-export async function getProfileRef(profile: Profile, more: NormalizerMore) {
+export async function getProfileRef(profile: Profile, times: Times, more: NormalizerMore) {
   if ("ref" in profile) return profile
   const schema = getProfileSchema(profile.id)
-  await schema?.normalize(profile, more)
+  await schema?.normalize(new Data(profile, times), more)
   return { ref: true, id: profile.id } as ProfileRef
 }
 

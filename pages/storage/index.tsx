@@ -5,7 +5,7 @@ import { fetchAsJson } from "../../src/fetcher";
 
 export namespace GZIP {
 
-  export async function stringify(value?: any) {
+  export function stringify(value?: any) {
     const text = JSON.stringify(value)
     const buffer = Buffer.from(text)
     const zbuffer = gzipSync(buffer)
@@ -14,7 +14,7 @@ export namespace GZIP {
     return ztext
   }
 
-  export async function parse(ztext: string) {
+  export function parse(ztext: string) {
     const zbuffer = Buffer.from(ztext, "base64")
     const buffer = gunzipSync(zbuffer)
     const text = buffer.toString()
@@ -38,8 +38,10 @@ async function fetchAsJsonWithObjectKey<T>(key: { url: string }, init?: RequestI
 function getHelloSchema(storage?: Storage) {
   if (!storage) return
 
-  return createQuerySchema({ url: "/api/hello?stored" }, fetchAsJsonWithObjectKey<unknown>, {
-    keySerializer: GZIP, // Will transform { url: string } into string (default is JSON)
+  return createQuerySchema({
+    key: { url: "/api/hello?stored" },
+    fetcher: fetchAsJsonWithObjectKey<unknown>,
+    keySerializer: GZIP,
     storage
   })
 }
@@ -76,7 +78,8 @@ export default function Page() {
     return IDBStorage.tryCreate({ name: "cache", keySerializer, valueSerializer }).unwrap()
   }, [])
 
-  const { cacheKey, data, fetch, clear } = useStoredHello(storage)
+  const query = useStoredHello(storage)
+  const { cacheKey, data, fetch, clear } = query
 
   console.log("gzipped key", cacheKey)
 

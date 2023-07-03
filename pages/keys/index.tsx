@@ -3,7 +3,10 @@ import { useState } from "react"
 import { fetchAsJson } from "../../src/fetcher"
 
 function getKeySchema(id: number) {
-  return createQuerySchema(`/api/query?id=${id}`, fetchAsJson<unknown>)
+  return createQuerySchema({
+    key: `/api/query?id=${id}`,
+    fetcher: fetchAsJson<unknown>
+  })
 }
 
 function useKey(id: number) {

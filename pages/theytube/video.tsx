@@ -1,4 +1,5 @@
-import { NormalizerMore, createQuerySchema, useFetch, useQuery } from "@hazae41/xswr";
+import { Optional } from "@hazae41/option";
+import { Data, Fetched, NormalizerMore, Times, createQuerySchema, useFetch, useQuery } from "@hazae41/xswr";
 import { Comment, CommentRef, NonNormalizedCommentData, getCommentRef } from "./comment";
 import { Profile, ProfileData, ProfileRef, getProfileRef } from "./profile";
 
@@ -30,19 +31,23 @@ export interface NormalizedVideoData {
 }
 
 export function getVideoSchema(id: string) {
-  async function normalizer(video: VideoData, more: NormalizerMore) {
-    const author = await getProfileRef(video.author, more)
-    const comments = await Promise.all(video.comments.map(data => getCommentRef(data, more)))
-    return { ...video, author, comments }
-  }
+  const normalizer = async (fetched: Optional<Fetched<VideoData, never>>, more: NormalizerMore) =>
+    fetched?.map(async video => {
+      const author = await getProfileRef(video.author, fetched, more)
+      const comments = await Promise.all(video.comments.map(data => getCommentRef(data, fetched, more)))
+      return { ...video, author, comments }
+    })
 
-  return createQuerySchema<string, VideoData, never>(`/api/theytube/video?id=${id}`, undefined, { normalizer })
+  return createQuerySchema<string, VideoData, never>({
+    key: `/api/theytube/video?id=${id}`,
+    normalizer
+  })
 }
 
-export async function getVideoRef(video: Video, more: NormalizerMore) {
+export async function getVideoRef(video: Video, times: Times, more: NormalizerMore) {
   if ("ref" in video) return video
   const schema = getVideoSchema(video.id)
-  await schema?.normalize(video, more)
+  await schema?.normalize(new Data(video, times), more)
   return { ref: true, id: video.id } as VideoRef
 }
 

@@ -3,7 +3,10 @@ import { useCallback, useState } from "react"
 import { fetchAsJson } from "../../src/fetcher"
 
 function getHelloSchema() {
-  return createQuerySchema("/api/hello", fetchAsJson<unknown>)
+  return createQuerySchema({
+    key: "/api/hello",
+    fetcher: fetchAsJson<unknown>
+  })
 }
 
 function useHello() {

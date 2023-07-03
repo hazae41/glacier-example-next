@@ -1,11 +1,16 @@
-import { NormalizerMore, createQuerySchema, createScrollQuerySchema, useFetch, useQuery, useScrollQuery } from "@hazae41/xswr"
+import { Optional } from "@hazae41/option"
+import { Data, Fetched, FetcherMore, NormalizerMore, Times, createQuerySchema, createScrollQuerySchema, useFetch, useQuery, useScrollQuery } from "@hazae41/xswr"
 import { useCallback } from "react"
 import { fetchAsJson } from "../../src/fetcher"
 
 interface ElementPage {
-  data: (ElementData | ElementRef)[],
+  data: Element[],
   after?: string
 }
+
+type Element =
+  | ElementData
+  | ElementRef
 
 interface ElementRef {
   ref: true,
@@ -18,29 +23,37 @@ interface ElementData {
 }
 
 function getElementSchema(id: string) {
-  return createQuerySchema(`data:${id}`, undefined)
+  return createQuerySchema({ key: `data:${id}` })
 }
 
-async function getElementRef(data: ElementData | ElementRef, more: NormalizerMore) {
+async function getElementRef(data: Element, times: Times, more: NormalizerMore) {
   if ("ref" in data) return data
   const schema = getElementSchema(data.id)
-  await schema?.normalize(data, more)
+  await schema?.normalize(new Data(data, times), more)
   return { ref: true, id: data.id } as ElementRef
 }
 
 function getElementsSchema() {
-  const normalizer = async (pages: ElementPage[], more: NormalizerMore) =>
-    await Promise.all(pages.map(async page =>
-      ({ ...page, data: await Promise.all(page.data.map(data => getElementRef(data, more))) })))
+  const fetcher = async (key: string, more?: FetcherMore) =>
+    await fetchAsJson<ElementPage>(key, more).then(r => r.mapSync(r => r.mapSync(x => [x])))
 
-
-  return createScrollQuerySchema((previous) => {
-    if (!previous)
-      return `/api/scroll`
+  const scroller = (previous: ElementPage) => {
     if (!previous.after)
       return undefined
     return `/api/scroll?after=${previous.after}`
-  }, fetchAsJson<ElementPage>, { normalizer })
+  }
+
+  const normalizer = async (fetched: Optional<Fetched<ElementPage[], Error>>, more: NormalizerMore) =>
+    fetched?.map(async pages =>
+      await Promise.all(pages.map(async page =>
+        ({ ...page, data: await Promise.all(page.data.map(data => getElementRef(data, fetched, more))) }))))
+
+  return createScrollQuerySchema<string, ElementPage, Error>({
+    key: `/api/scroll`,
+    scroller: scroller,
+    fetcher: fetcher,
+    normalizer
+  })
 }
 
 function useElement(id: string) {

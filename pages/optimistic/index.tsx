@@ -8,7 +8,10 @@ interface HelloData {
 }
 
 function createHelloSchema() {
-  return createQuerySchema("/api/hello", fetchAsJson<HelloData>)
+  return createQuerySchema({
+    key: "/api/hello",
+    fetcher: fetchAsJson<HelloData>
+  })
 }
 
 function useHelloQuery() {
