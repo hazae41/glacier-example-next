@@ -1,9 +1,9 @@
-import { createQuerySchema, useFetch, useQuery } from "@hazae41/xswr"
+import { createQuery, useFetch, useQuery } from "@hazae41/glacier"
 import { Suspense, useEffect, useState } from "react"
 import { fetchAsJson } from "../../src/fetcher"
 
 function getHelloSchema() {
-  return createQuerySchema({
+  return createQuery({
     key: "/api/hello",
     fetcher: fetchAsJson<unknown>
   })
@@ -36,7 +36,7 @@ function Parent() {
 
   // Suspend until next state change
   if (!hello.data)
-    throw hello.suspend().then(r => r.unwrap())
+    throw hello.suspend()
 
   return <div>
     Parent: {JSON.stringify(hello.data)}

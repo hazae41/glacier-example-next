@@ -1,5 +1,5 @@
-import { Option, Optional } from "@hazae41/option";
-import { Data, Fetched, NormalizerMore, State, Times, createQuerySchema, useFetch, useQuery } from "@hazae41/xswr";
+import { Data, Fetched, NormalizerMore, State, Times, createQuery, useFetch, useQuery } from "@hazae41/glacier";
+import { Nullable, Option } from "@hazae41/option";
 import { useCallback } from "react";
 import { fetchAsJson } from "../../src/fetcher";
 
@@ -18,7 +18,7 @@ export interface HelloData {
 }
 
 function getDataSchema(id: string) {
-  return createQuerySchema({
+  return createQuery({
     key: `/api/array?id=${id}`,
     fetcher: fetchAsJson<HelloData>
   })
@@ -32,10 +32,10 @@ async function getDataRef(data: Hello, times: Times, more: NormalizerMore): Prom
 }
 
 function getAllHelloSchema() {
-  const normalizer = async (fetched: Optional<Fetched<Hello[], Error>>, more: NormalizerMore) =>
-    fetched?.map(async (data) => await Promise.all(data.map(data => getDataRef(data, fetched, more))))
+  const normalizer = async (fetched: Nullable<Fetched<Hello[], Error>>, more: NormalizerMore) =>
+    await fetched?.map(async (data) => await Promise.all(data.map(data => getDataRef(data, fetched, more))))
 
-  return createQuerySchema({
+  return createQuery<string, Hello[], Error>({
     key: `/api/array/all`,
     fetcher: fetchAsJson<Hello[]>,
     normalizer

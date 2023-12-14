@@ -1,5 +1,5 @@
-import { Optional } from "@hazae41/option";
-import { Data, Fetched, NormalizerMore, Times, createQuerySchema, useFetch, useQuery } from "@hazae41/xswr";
+import { Data, Fetched, NormalizerMore, Times, createQuery, useFetch, useQuery } from "@hazae41/glacier";
+import { Nullable } from "@hazae41/option";
 import { Comment, CommentRef, NonNormalizedCommentData, getCommentRef } from "./comment";
 import { Profile, ProfileData, ProfileRef, getProfileRef } from "./profile";
 
@@ -31,14 +31,14 @@ export interface NormalizedVideoData {
 }
 
 export function getVideoSchema(id: string) {
-  const normalizer = async (fetched: Optional<Fetched<VideoData, never>>, more: NormalizerMore) =>
+  const normalizer = async (fetched: Nullable<Fetched<VideoData, never>>, more: NormalizerMore) =>
     fetched?.map(async video => {
       const author = await getProfileRef(video.author, fetched, more)
       const comments = await Promise.all(video.comments.map(data => getCommentRef(data, fetched, more)))
       return { ...video, author, comments }
     })
 
-  return createQuerySchema<string, VideoData, never>({
+  return createQuery<string, VideoData, never>({
     key: `/api/theytube/video?id=${id}`,
     normalizer
   })

@@ -1,14 +1,14 @@
-import { Optional } from "@hazae41/option";
-import { Fetched, NormalizerMore, createQuerySchema, useFetch, useQuery } from "@hazae41/xswr";
+import { Fetched, NormalizerMore, createQuery, useFetch, useQuery } from "@hazae41/glacier";
+import { Nullable } from "@hazae41/option";
 import { useCallback } from "react";
 import { fetchAsJson } from "../../src/fetcher";
 import { Video, VideoData, getVideoRef } from "./video";
 
 function getAllVideosSchema() {
-  const normalizer = async (fetched: Optional<Fetched<Video[], Error>>, more: NormalizerMore) =>
+  const normalizer = async (fetched: Nullable<Fetched<Video[], Error>>, more: NormalizerMore) =>
     fetched?.map(async videos => await Promise.all(videos.map(data => getVideoRef(data, fetched, more))))
 
-  return createQuerySchema<string, Video[], Error>({
+  return createQuery<string, Video[], Error>({
     key: `/api/theytube`,
     fetcher: fetchAsJson<VideoData[]>,
     normalizer

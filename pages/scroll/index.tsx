@@ -1,5 +1,5 @@
-import { Optional } from "@hazae41/option"
-import { Data, Fetched, FetcherMore, NormalizerMore, Times, createQuerySchema, createScrollQuerySchema, useFetch, useQuery, useScrollQuery } from "@hazae41/xswr"
+import { Data, Fetched, FetcherMore, NormalizerMore, Times, createQuery, createScrollableQuery, useFetch, useQuery, useScrollableQuery } from "@hazae41/glacier"
+import { Nullable } from "@hazae41/option"
 import { useCallback } from "react"
 import { fetchAsJson } from "../../src/fetcher"
 
@@ -23,7 +23,7 @@ interface ElementData {
 }
 
 function getElementSchema(id: string) {
-  return createQuerySchema({ key: `data:${id}` })
+  return createQuery({ key: `data:${id}` })
 }
 
 async function getElementRef(data: Element, times: Times, more: NormalizerMore) {
@@ -35,7 +35,7 @@ async function getElementRef(data: Element, times: Times, more: NormalizerMore) 
 
 function getElementsSchema() {
   const fetcher = async (key: string, more?: FetcherMore) =>
-    await fetchAsJson<ElementPage>(key, more).then(r => r.mapSync(r => r.mapSync(x => [x])))
+    await fetchAsJson<ElementPage>(key, more).then(r => r.mapSync(x => [x]))
 
   const scroller = (previous: ElementPage) => {
     if (!previous.after)
@@ -43,12 +43,12 @@ function getElementsSchema() {
     return `/api/scroll?after=${previous.after}`
   }
 
-  const normalizer = async (fetched: Optional<Fetched<ElementPage[], Error>>, more: NormalizerMore) =>
+  const normalizer = async (fetched: Nullable<Fetched<ElementPage[], Error>>, more: NormalizerMore) =>
     fetched?.map(async pages =>
       await Promise.all(pages.map(async page =>
         ({ ...page, data: await Promise.all(page.data.map(data => getElementRef(data, fetched, more))) }))))
 
-  return createScrollQuerySchema<string, ElementPage, Error>({
+  return createScrollableQuery<string, ElementPage, Error>({
     key: `/api/scroll`,
     scroller: scroller,
     fetcher: fetcher,
@@ -61,7 +61,7 @@ function useElement(id: string) {
 }
 
 function useElements() {
-  const query = useScrollQuery(getElementsSchema, [])
+  const query = useScrollableQuery(getElementsSchema, [])
   useFetch(query)
   return query
 }

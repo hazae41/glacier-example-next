@@ -1,5 +1,5 @@
-import { Option, Optional } from "@hazae41/option";
-import { Data, Fetched, NormalizerMore, State, Times, createQuerySchema, useFetch, useQuery, useXSWR } from "@hazae41/xswr";
+import { Data, Fetched, NormalizerMore, State, Times, createQuery, useFetch, useQuery } from "@hazae41/glacier";
+import { Nullable, Option } from "@hazae41/option";
 import { useCallback } from "react";
 import { Profile, ProfileData, ProfileRef, getProfileRef, getProfileSchema } from "./profile";
 
@@ -29,13 +29,13 @@ export interface NormalizedCommentData {
 }
 
 export function getCommentSchema(id: string) {
-  const normalizer = async (fetched: Optional<Fetched<CommentData, never>>, more: NormalizerMore) =>
+  const normalizer = async (fetched: Nullable<Fetched<CommentData, never>>, more: NormalizerMore) =>
     fetched?.map(async comment => {
       const author = await getProfileRef(comment.author, fetched, more)
       return { ...comment, author }
     })
 
-  return createQuerySchema<string, CommentData, never>({
+  return createQuery<string, CommentData, never>({
     key: `/api/theytube/comment?id=${id}`,
     normalizer
   })
@@ -59,21 +59,14 @@ function pipeData<D, F>(piper: (data: D) => D) {
 }
 
 export function Comment(props: { id: string }) {
-  const { make } = useXSWR()
   const comment = useComment(props.id)
 
   const onChangeAuthorClick = useCallback(async () => {
     if (!comment.data)
       return
 
-    const sJohn69 = getProfileSchema("1518516160")
-
-    if (!sJohn69)
-      return
-
-    const John69 = await make(sJohn69)
-
-    const author = John69.state.data?.inner
+    const John69 = await getProfileSchema("1518516160").state
+    const author = John69.data?.inner
 
     if (!author)
       return

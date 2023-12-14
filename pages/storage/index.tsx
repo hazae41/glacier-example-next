@@ -1,11 +1,11 @@
-import { AesGcmCoder, AsyncPipeBicoder, HmacEncoder, IDBStorage, PBKDF2, Storage, createQuerySchema, useDebug, useQuery } from "@hazae41/xswr";
+import { AesGcmCoder, AsyncJson, AsyncPipeBicoder, HmacEncoder, IDBStorage, RawState, Storage, createQuery, useDebug, useQuery } from "@hazae41/glacier";
 import { DependencyList, useEffect, useState } from "react";
 import { gunzipSync, gzipSync } from "zlib";
 import { fetchAsJson } from "../../src/fetcher";
 
 export namespace GZIP {
 
-  export function stringify(value?: any) {
+  export function encodeOrThrow(value?: any) {
     const text = JSON.stringify(value)
     const buffer = Buffer.from(text)
     const zbuffer = gzipSync(buffer)
@@ -14,7 +14,7 @@ export namespace GZIP {
     return ztext
   }
 
-  export function parse(ztext: string) {
+  export function decodeOrThrow(ztext: string) {
     const zbuffer = Buffer.from(ztext, "base64")
     const buffer = gunzipSync(zbuffer)
     const text = buffer.toString()
@@ -38,7 +38,7 @@ async function fetchAsJsonWithObjectKey<T>(key: { url: string }, init?: RequestI
 function getHelloSchema(storage?: Storage) {
   if (!storage) return
 
-  return createQuerySchema({
+  return createQuery({
     key: { url: "/api/hello?stored" },
     fetcher: fetchAsJsonWithObjectKey<unknown>,
     keySerializer: GZIP,
@@ -67,15 +67,44 @@ function useAsyncMemo<T>(factory: () => Promise<T>, deps: DependencyList) {
 export default function Page() {
 
   const storage = useAsyncMemo(async () => {
-    const pbkdf2 = await PBKDF2.from("password")
+    const pbkdf2 = await crypto.subtle.importKey("raw", new TextEncoder().encode("password"), { name: "PBKDF2" }, false, ["deriveBits", "deriveKey"])
 
-    const salt = Buffer.from("zCjjKo0sd0EF6w9C40ud7Q==", "base64")
+    const keyParams = {
+      derivedKeyType: {
+        name: "HMAC",
+        hash: "SHA-256"
+      },
+      algorithm: {
+        name: "PBKDF2",
+        hash: "SHA-256",
+        iterations: 1_000_000,
+        salt: Buffer.from("zCjjKo0sd0EF6w9C40ud7Q==", "base64")
+      }
+    }
 
-    const keySerializer = await HmacEncoder.fromPBKDF2(pbkdf2, salt, 1_000_000)
-    const innerSerializer = await AesGcmCoder.fromPBKDF2(pbkdf2, salt, 1_000_000)
-    const valueSerializer = new AsyncPipeBicoder(JSON, innerSerializer)
+    const valueParams = {
+      derivedKeyType: {
+        name: "AES-GCM",
+        length: 256
+      },
+      algorithm: {
+        name: "PBKDF2",
+        hash: "SHA-256",
+        iterations: 1_000_000,
+        salt: Buffer.from("zCjjKo0sd0EF6w9C40ud7Q==", "base64")
+      }
+    }
 
-    return IDBStorage.tryCreate({ name: "cache", keySerializer, valueSerializer }).unwrap()
+    const keyKey = await crypto.subtle.deriveKey(keyParams.algorithm, pbkdf2, keyParams.derivedKeyType, false, ["sign"])
+    const valueKey = await crypto.subtle.deriveKey(valueParams.algorithm, pbkdf2, valueParams.derivedKeyType, false, ["encrypt", "decrypt"])
+
+    const hasher = new HmacEncoder(keyKey)
+    const crypter = new AesGcmCoder(valueKey)
+
+    const keySerializer = hasher
+    const valueSerializer = new AsyncPipeBicoder<RawState, string, string>(AsyncJson, crypter)
+
+    return IDBStorage.createOrThrow({ name: "cache", keySerializer, valueSerializer })
   }, [])
 
   const query = useStoredHello(storage)

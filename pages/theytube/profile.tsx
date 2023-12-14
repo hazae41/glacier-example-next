@@ -1,5 +1,5 @@
+import { Data, NormalizerMore, State, Times, createQuery, useFetch, useQuery } from "@hazae41/glacier";
 import { Option } from "@hazae41/option";
-import { Data, NormalizerMore, State, Times, createQuerySchema, useFetch, useQuery } from "@hazae41/xswr";
 import { useCallback } from "react";
 
 export type Profile =
@@ -17,7 +17,7 @@ export interface ProfileData {
 }
 
 export function getProfileSchema(id: string) {
-  return createQuerySchema<string, ProfileData, never>({
+  return createQuery<string, ProfileData, never>({
     key: `/api/theytube/profile?id=${id}`
   })
 }

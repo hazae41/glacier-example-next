@@ -1,9 +1,9 @@
-import { createQuerySchema, useFetch, useQuery, } from "@hazae41/xswr"
+import { createQuery, useFetch, useQuery, } from "@hazae41/glacier"
 import { useCallback, useState } from "react"
 import { fetchAsJson } from "../../src/fetcher"
 
 function getHelloSchema() {
-  return createQuerySchema({
+  return createQuery({
     key: "/api/hello",
     fetcher: fetchAsJson<unknown>
   })

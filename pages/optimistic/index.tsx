@@ -1,5 +1,5 @@
+import { Data, State, createQuery, useFetch, useQuery } from "@hazae41/glacier"
 import { Option, Some } from "@hazae41/option"
-import { Data, State, createQuerySchema, useFetch, useQuery } from "@hazae41/xswr"
 import { useCallback } from "react"
 import { fetchAsJson } from "../../src/fetcher"
 
@@ -8,7 +8,7 @@ interface HelloData {
 }
 
 function createHelloSchema() {
-  return createQuerySchema({
+  return createQuery({
     key: "/api/hello",
     fetcher: fetchAsJson<HelloData>
   })
@@ -30,7 +30,7 @@ export default function Page() {
   const { current, real, fetching, update, refetch, mutate, aborter, optimistic } = hello
 
   const onRefreshClick = useCallback(() => {
-    refetch().then(r => r.ignore())
+    refetch()
   }, [refetch])
 
   const onMutateClick = useCallback(() => {
