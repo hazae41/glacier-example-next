@@ -9,7 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@hazae41/glacier": "^2.0.0-112",
+    "@hazae41/glacier": "^2.0.0-114",
     "@hazae41/option": "^1.0.27",
     "@types/node": "20.10.4",
     "@types/react": "18.2.45",
